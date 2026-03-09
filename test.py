@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from math import sin, cos, tan, sqrt, exp, log, pi, e
+import re
 
 
 def plot_function():
@@ -15,13 +17,42 @@ def plot_function():
         
         # Convert ^ to ** for exponentiation
         function_str = function_str.replace('^', '**')
+        
+        # Handle implicit multiplication (e.g., 2x -> 2*x, )x -> )*x)
+        function_str = re.sub(r'(\d)([a-zA-Z(])', r'\1*\2', function_str)  # digit followed by letter or (
+        function_str = re.sub(r'(\))(\d|[a-zA-Z(])', r'\1*\2', function_str)  # ) followed by digit, letter, or (
+
+        # Get x-axis range from user (with defaults)
+        try:
+            x_range_input = input("Enter x-axis range (e.g., '-10,10', press Enter for default -10 to 10): ").strip()
+            if x_range_input:
+                x_min, x_max = map(float, x_range_input.split(','))
+            else:
+                x_min, x_max = -10, 10
+        except ValueError:
+            print("Invalid range format. Using default -10 to 10.")
+            x_min, x_max = -10, 10
 
         # Create x values
-        x = np.linspace(-10, 10, 1000)
+        x = np.linspace(x_min, x_max, 1000)
         
         # Evaluate the function safely
         try:
-            y = eval(function_str, {"__builtins__": {}}, {"x": x, "np": np})
+            safe_dict = {
+                "__builtins__": {},
+                "x": x,
+                "np": np,
+                "sin": np.sin,
+                "cos": np.cos,
+                "tan": np.tan,
+                "sqrt": np.sqrt,
+                "exp": np.exp,
+                "log": np.log,
+                "abs": np.abs,
+                "pi": np.pi,
+                "e": np.e
+            }
+            y = eval(function_str, safe_dict)
         except Exception as e:
             print(f"Error evaluating function: {e}")
             return
@@ -45,5 +76,17 @@ def plot_function():
         print(f"An error occurred: {e}")
 
 
+def plot_multiple():
+    """
+    Allows plotting multiple functions until user quits.
+    """
+    while True:
+        plot_function()
+        again = input("\nPlot another function? (y/n): ").strip().lower()
+        if again != 'y':
+            print("Goodbye!")
+            break
+
+
 if __name__ == "__main__":
-    plot_function()
+    plot_multiple()
